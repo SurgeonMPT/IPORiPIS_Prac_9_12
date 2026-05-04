@@ -1,0 +1,49 @@
+@startuml
+title Диаграмма контейнеров C2 — Система бронирования переговорных комнат
+
+' Пользователи
+actor "Сотрудник" as Employee
+actor "Администратор" as Admin
+
+' Наша система (контейнеры)
+rectangle "Система бронирования переговорных комнат" {
+  
+  rectangle "Frontend\n(Flask + Bootstrap)" as Frontend
+  rectangle "Booking API\n(Flask + SQLAlchemy)" as BookingAPI
+  rectangle "Notification Worker\n(Python asyncio + aiogram + aiosmtplib)" as Worker
+  rectangle "RabbitMQ\n(Очередь сообщений)" as RabbitMQ
+  database "PostgreSQL\n(База данных)" as DB
+  
+}
+
+' Внешние системы
+rectangle "SMTP-сервер\n(Яндекс, Mail.ru, Gmail, МИРЭА)" as SMTP
+rectangle "Telegram Bot API" as Telegram
+
+' Связи пользователей
+Employee --> Frontend : "HTTPS"
+Employee --> BookingAPI : "REST API (HTTPS)"
+Admin --> Frontend : "HTTPS (админ-панель)"
+
+' Внутренние связи
+Frontend --> BookingAPI : "HTTP (внутренний API)"
+BookingAPI --> DB : "SQL (asyncpg/SQLAlchemy)"
+BookingAPI --> RabbitMQ : "AMQP (публикация сообщений)"
+RabbitMQ --> Worker : "AMQP (получение сообщений)"
+Worker --> DB : "SQL (чтение данных бронирования)"
+Worker --> SMTP : "SMTP (SSL/TLS)"
+Worker --> Telegram : "HTTPS"
+
+' Примечания
+note right of BookingAPI
+  Проверка конфликтов,
+  CRUD бронирований,
+  управление комнатами
+end note
+
+note right of Worker
+  Асинхронная отправка
+  email и Telegram
+end note
+
+@enduml

@@ -1,0 +1,31 @@
+@startuml
+title Диаграмма контекста C1 — Система бронирования переговорных комнат
+
+' Пользователи
+actor "Сотрудник" as Employee
+actor "Администратор" as Admin
+
+' Наша система
+rectangle "Система бронирования переговорных комнат" as BookingSystem {
+}
+
+' Внешние системы
+rectangle "SMTP-сервер\n(Яндекс, Mail.ru, Gmail, МИРЭА)" as SMTP
+rectangle "Telegram Bot API" as Telegram
+
+' Связи
+Employee --> BookingSystem : "Использует через веб-интерфейс или API"
+Admin --> BookingSystem : "Управляет комнатами и бронированиями"
+BookingSystem --> SMTP : "Отправляет email-уведомления"
+BookingSystem --> Telegram : "Отправляет Telegram-уведомления"
+
+' Примечания
+note right of BookingSystem
+  Основные функции:
+  - Просмотр комнат
+  - Создание/отмена бронирований
+  - Проверка конфликтов
+  - Уведомления
+end note
+
+@enduml

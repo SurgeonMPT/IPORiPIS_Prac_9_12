@@ -46,4 +46,17 @@ note right of Worker
   email и Telegram
 end note
 
+' Легенда
+legend right
+  | <b>Элемент</b> | <b>Описание</b> |
+  | Actor | Пользователь системы |
+  | Rectangle | Контейнер (сервис) |
+  | Database | База данных |
+  | --- | --- |
+  | <b>Связи</b> | <b>Протокол</b> |
+  | --> | HTTP / HTTPS |
+  | --> | AMQP (RabbitMQ) |
+  | --> | SQL (PostgreSQL) |
+  | --> | SMTP (email) |
+endlegend
 @enduml

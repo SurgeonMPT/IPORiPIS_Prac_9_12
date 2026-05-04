@@ -1,0 +1,121 @@
+@startuml
+title Диаграмма компонентов C3 — Booking API (внутренняя структура)
+
+' Контейнер Booking API
+rectangle "Booking API (Flask + SQLAlchemy) [Порт: 8000]" {
+  
+  ' === Слой API (маршруты) ===
+  package "REST API Layer" {
+    component "GET /rooms" as GetRooms
+    component "GET /rooms/{id}" as GetRoom
+    component "POST /bookings" as CreateBooking
+    component "GET /bookings" as GetBookings
+    component "DELETE /bookings/{id}" as DeleteBooking
+    component "PUT /bookings/{id}" as UpdateBooking
+    component "GET /admin/stats" as AdminStats
+  }
+  
+  ' === Слой аутентификации ===
+  package "Security Layer" {
+    component "JWT Token Validator" as JWTValidator
+    component "Role Checker\n(user/admin)" as RoleChecker
+    component "Rate Limiter" as RateLimiter
+  }
+  
+  ' === Слой бизнес-логики ===
+  package "Business Logic Layer" {
+    component "ConflictDetector" as ConflictDetector
+    component "TimeSlotValidator" as TimeValidator
+    component "BookingLifecycle" as BookingLifecycle
+    component "StatisticsCalculator" as StatsCalculator
+  }
+  
+  ' === Слой доступа к данным ===
+  package "Data Access Layer (SQLAlchemy)" {
+    component "RoomRepository" as RoomRepo
+    component "BookingRepository" as BookingRepo
+    component "UserRepository" as UserRepo
+    component "UnitOfWork" as UoW
+  }
+  
+  ' === Слой интеграции ===
+  package "Integration Layer" {
+    component "RabbitMQ Publisher" as RMQPublisher
+    component "Metric Exporter\n(Prometheus)" as Metrics
+  }
+}
+
+' Внешние системы
+database "PostgreSQL" as DB
+queue "RabbitMQ" as RMQ
+actor "Сотрудник" as Employee
+actor "Администратор" as Admin
+cloud "SMTP / Telegram" as External
+
+' Связи пользователей
+Employee --> GetRooms : "GET"
+Employee --> CreateBooking : "POST"
+Employee --> GetBookings : "GET"
+Employee --> DeleteBooking : "DELETE"
+Admin --> AdminStats : "GET"
+
+' Внутренние связи
+GetRooms --> JWTValidator : "через декоратор"
+CreateBooking --> JWTValidator : "через декоратор"
+CreateBooking --> RoleChecker : "проверка роли"
+CreateBooking --> TimeValidator : "валидация времени"
+CreateBooking --> ConflictDetector : "проверка конфликтов"
+CreateBooking --> BookingLifecycle : "создание брони"
+
+BookingLifecycle --> BookingRepo : "сохранение"
+BookingLifecycle --> RMQPublisher : "отправка уведомления"
+DeleteBooking --> BookingRepo : "удаление"
+DeleteBooking --> RMQPublisher : "отправка уведомления"
+
+ConflictDetector --> BookingRepo : "поиск пересечений"
+StatsCalculator --> BookingRepo : "агрегация данных"
+
+RoomRepo --> DB : "SELECT/INSERT/UPDATE"
+BookingRepo --> DB : "SELECT/INSERT/UPDATE/DELETE"
+UserRepo --> DB : "SELECT"
+
+RMQPublisher --> RMQ : "basic_publish"
+
+Metrics --> External : "/metrics (Prometheus)"
+
+' Примечания
+note right of ConflictDetector
+  Алгоритм проверки конфликтов:
+  SELECT * FROM bookings 
+  WHERE room_id = :room_id 
+  AND NOT (end_time <= :start_time 
+           OR start_time >= :end_time)
+end note
+
+note right of RMQPublisher
+  Очередь: "notifications"
+  Format: JSON
+end note
+
+note left of RoleChecker
+  Доступ:
+  - user: свои бронирования
+  - admin: все бронирования
+end note
+
+' Легенда
+legend right
+  | <b>Слой</b> | <b>Назначение</b> |
+  | REST API Layer | HTTP эндпоинты |
+  | Security Layer | JWT, роли, лимиты |
+  | Business Logic | Проверки, управление |
+  | Data Access | Работа с БД (SQLAlchemy) |
+  | Integration | RabbitMQ, Metrics |
+  ---
+  | <b>Тип связи</b> | <b>Назначение</b> |
+  | --> | Запрос от пользователя |
+  | --> | Внутренний вызов |
+  | --> | Запрос к БД |
+  | --> | Отправка в очередь |
+endlegend
+@enduml

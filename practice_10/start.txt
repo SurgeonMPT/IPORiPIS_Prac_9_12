@@ -1,0 +1,16 @@
+# 1. Перейти в директорию practice2
+cd practice2
+
+# 2. Создать .env файл с секретами
+cat > .env << EOF
+TELEGRAM_BOT_TOKEN=your_token_here
+SMTP_USER=your_email@gmail.com
+SMTP_PASSWORD=your_app_password
+EOF
+
+# 3. Запустить все сервисы
+docker compose up --build
+
+# 4. В другом терминале проверить работоспособность
+curl http://localhost:8000/health
+curl http://localhost:8000/

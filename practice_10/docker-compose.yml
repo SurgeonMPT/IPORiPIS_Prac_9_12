@@ -19,7 +19,7 @@ services:
       - postgres_data:/var/lib/postgresql/data
     networks:
       - booking-network
-    restart: unless-stopped
+    restart: unless-stopped   # исправлено
 
   rabbitmq:
     image: rabbitmq:3-management
@@ -60,7 +60,7 @@ services:
       start_period: 10s
     networks:
       - booking-network
-    restart: unless-stopped
+    restart: unless-stopped   # исправлено
 
   notification-worker:
     build: ./services/notification-worker
@@ -77,7 +77,7 @@ services:
       TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
     networks:
       - booking-network
-    restart: unless-failed
+    restart: unless-stopped
 
 volumes:
   postgres_data:
